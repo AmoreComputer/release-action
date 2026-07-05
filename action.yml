@@ -1,0 +1,202 @@
+name: Amore Release
+description: Build from source, sign, notarize, and publish a macOS app release via the Amore CLI.
+
+inputs:
+  scheme:
+    description: Xcode scheme to build.
+    required: false
+    default: ""
+  path:
+    description: Optional path to .xcodeproj / .xcworkspace. Empty auto-discovers.
+    required: false
+    default: ""
+  release-notes:
+    required: false
+    default: ""
+  channel:
+    description: Publish to a named channel (e.g. alpha, beta). Empty publishes to the stable channel.
+    required: false
+    default: ""
+  critical:
+    required: false
+    default: "false"
+  draft:
+    required: false
+    default: "false"
+  phased-rollout:
+    required: false
+    default: "false"
+  build-number:
+    description: '"auto" for one past the highest released build, "timestamp" for yyyyMMddHHmmss UTC, or a positive integer.'
+    required: false
+    default: "auto"
+  marketing-version:
+    required: false
+    default: ""
+  watermark:
+    description: 'Keep the "Built with amore.computer" watermark on the DMG. Leave false to use your account default: Amore+ ships clean, free accounts always ship with the watermark. Set true to keep it regardless.'
+    required: false
+    default: "false"
+  no-dmg:
+    description: Ship a ZIP instead of a DMG (skips code signing and notarization).
+    required: false
+    default: "false"
+
+  codesign-identity:
+    required: false
+    default: ""
+  dev-id-cert-p12:
+    description: base64 of the Developer ID Application .p12.
+    required: false
+    default: ""
+  dev-id-cert-password:
+    required: false
+    default: ""
+  provisioning-profile:
+    description: base64 of a .provisionprofile, for apps whose entitlements require one (e.g. Associated Domains).
+    required: false
+    default: ""
+  sparkle-private-key:
+    description: base64 Ed25519 Sparkle signing key.
+    required: false
+    default: ""
+  asc-api-key-id:
+    required: false
+    default: ""
+  asc-api-issuer:
+    required: false
+    default: ""
+  asc-api-key:
+    description: base64 of the ASC .p8 key.
+    required: false
+    default: ""
+
+  s3-bucket:
+    required: false
+    default: ""
+  s3-region:
+    required: false
+    default: ""
+  s3-public-url:
+    required: false
+    default: ""
+  s3-endpoint:
+    description: Custom endpoint for R2 / MinIO.
+    required: false
+    default: ""
+  s3-path-prefix:
+    description: Folder path prefix within the bucket.
+    required: false
+    default: ""
+  s3-appcast-path:
+    description: Path to appcast.xml within the bucket. Defaults to appcast.xml.
+    required: false
+    default: ""
+  aws-access-key-id:
+    required: false
+    default: ""
+  aws-secret-access-key:
+    required: false
+    default: ""
+
+  amore-token:
+    description: Scoped Amore API token.
+    required: false
+    default: ""
+
+  xcode-path:
+    required: false
+    default: ""
+
+outputs:
+  version:
+    description: Marketing version string.
+    value: ${{ steps.release.outputs.version }}
+  build-number:
+    description: Integer build number.
+    value: ${{ steps.release.outputs.build-number }}
+  bundle-id:
+    value: ${{ steps.release.outputs.bundle-id }}
+  download-url:
+    description: Direct download URL for this release.
+    value: ${{ steps.release.outputs.download-url }}
+  latest-url:
+    description: Stable URL that always points at the newest release.
+    value: ${{ steps.release.outputs.latest-url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Select Xcode
+      if: inputs.xcode-path != ''
+      shell: bash
+      run: sudo xcode-select -s "${{ inputs.xcode-path }}"
+
+    - name: Install amore
+      shell: bash
+      run: |
+        brew install --cask AmoreComputer/tap/amore
+        command -v amore
+
+    - name: Import signing certificate
+      if: inputs.dev-id-cert-p12 != ''
+      uses: apple-actions/import-codesign-certs@63fff01cd422d4b7b855d40ca1e9d34d2de9427d # v3
+      with:
+        p12-file-base64: ${{ inputs.dev-id-cert-p12 }}
+        p12-password: ${{ inputs.dev-id-cert-password }}
+
+    - name: Release
+      id: release
+      shell: bash
+      env:
+        IN_SCHEME: ${{ inputs.scheme }}
+        IN_PATH: ${{ inputs.path }}
+        IN_CODESIGN_IDENTITY: ${{ inputs.codesign-identity }}
+        IN_RELEASE_NOTES: ${{ inputs.release-notes }}
+        IN_CHANNEL: ${{ inputs.channel }}
+        IN_CRITICAL: ${{ inputs.critical }}
+        IN_DRAFT: ${{ inputs.draft }}
+        IN_PHASED_ROLLOUT: ${{ inputs.phased-rollout }}
+        IN_WATERMARK: ${{ inputs.watermark }}
+        IN_NO_DMG: ${{ inputs.no-dmg }}
+        IN_BUILD_NUMBER: ${{ inputs.build-number }}
+        IN_MARKETING_VERSION: ${{ inputs.marketing-version }}
+        SPARKLE_PRIVATE_KEY: ${{ inputs.sparkle-private-key }}
+        ASC_API_KEY_ID: ${{ inputs.asc-api-key-id }}
+        ASC_API_ISSUER: ${{ inputs.asc-api-issuer }}
+        ASC_API_KEY: ${{ inputs.asc-api-key }}
+        AMORE_PROVISIONING_PROFILE: ${{ inputs.provisioning-profile }}
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AMORE_S3_BUCKET: ${{ inputs.s3-bucket }}
+        AMORE_S3_REGION: ${{ inputs.s3-region }}
+        AMORE_S3_PUBLIC_URL: ${{ inputs.s3-public-url }}
+        AMORE_S3_ENDPOINT: ${{ inputs.s3-endpoint }}
+        AMORE_S3_PATH_PREFIX: ${{ inputs.s3-path-prefix }}
+        AMORE_S3_APPCAST_PATH: ${{ inputs.s3-appcast-path }}
+        AMORE_TOKEN: ${{ inputs.amore-token }}
+      run: |
+        set -euo pipefail
+        args=(release)
+        [ -n "$IN_PATH" ] && args+=("$IN_PATH")
+        [ -n "$IN_SCHEME" ] && args+=(--scheme "$IN_SCHEME")
+        [ -n "$IN_CODESIGN_IDENTITY" ] && args+=(--codesign-identity "$IN_CODESIGN_IDENTITY")
+        [ -n "$IN_RELEASE_NOTES" ] && args+=(--release-notes "$IN_RELEASE_NOTES")
+        [ -n "$IN_BUILD_NUMBER" ] && args+=(--build-number "$IN_BUILD_NUMBER")
+        [ -n "$IN_MARKETING_VERSION" ] && args+=(--marketing-version "$IN_MARKETING_VERSION")
+        [ -n "$IN_CHANNEL" ] && args+=(--channel "$IN_CHANNEL")
+        [ "$IN_CRITICAL" = "true" ] && args+=(--critical)
+        [ "$IN_DRAFT" = "true" ] && args+=(--draft)
+        [ "$IN_PHASED_ROLLOUT" = "true" ] && args+=(--phased-rollout)
+        [ "$IN_WATERMARK" = "true" ] && args+=(--watermark)
+        [ "$IN_NO_DMG" = "true" ] && args+=(--no-dmg)
+
+        amore "${args[@]}" --format json | tee release.json
+
+        {
+          echo "version=$(jq -r '.release.bundleVersionString // ""' release.json)"
+          echo "build-number=$(jq -r '.release.bundleVersion // ""' release.json)"
+          echo "bundle-id=$(jq -r '.app.bundleIdentifier // ""' release.json)"
+          echo "download-url=$(jq -r '.release.downloadURL // ""' release.json)"
+          echo "latest-url=$(jq -r '.latestDownloadURL // ""' release.json)"
+        } >> "$GITHUB_OUTPUT"

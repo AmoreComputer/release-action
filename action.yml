@@ -1,6 +1,10 @@
 name: Amore Release
 description: Build from source, sign, notarize, and publish a macOS app release via the Amore CLI.
 
+branding:
+  icon: box
+  color: white
+
 inputs:
   scheme:
     description: Xcode scheme to build.

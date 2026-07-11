@@ -18,9 +18,13 @@ on:
   workflow_dispatch:
     inputs:
       channel:
-        type: string
-        default: ""
-        description: Channel to publish (e.g. beta). Empty ships stable.
+        type: choice
+        default: alpha
+        options:
+          - alpha
+          - beta
+          - stable
+        description: Channel for manual runs (stable = no channel)
       build-number:
         type: string
         default: auto
@@ -28,7 +32,7 @@ on:
       marketing-version:
         type: string
         default: ""
-        description: Override marketing version (e.g. 1.0.1)
+        description: Override marketing version (e.g. 1.2.3)
 
 concurrency:
   group: amore-release
@@ -36,15 +40,16 @@ concurrency:
 
 jobs:
   release:
-    runs-on: macos-15          # pick the runner your project supports
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
 
       - uses: AmoreComputer/release-action@v1
         with:
-          # Pin Xcode to what your project builds with. Do not rely on the runner
-          # default drifting to a version that breaks your build.
-          xcode-path: /Applications/Xcode_16.app
+          # Uncomment to pin Xcode to what your project builds with, so a runner
+          # image update can't drift the default to a version that breaks your
+          # build. Leave commented to use whatever the runner ships.
+          # xcode-path: /Applications/Xcode_16.app
           scheme: YourScheme
           codesign-identity: ${{ secrets.CODESIGN_IDENTITY }}
           dev-id-cert-p12: ${{ secrets.DEV_ID_CERT_P12 }}
@@ -94,7 +99,7 @@ on:
   push:
     branches: [main]      # push to main    -> alpha
     tags: ['v*']          # tag v1.2.3-beta -> beta
-                          # tag v1.2.3       -> stable
+                          # tag v1.2.3      -> stable
   workflow_dispatch:
     inputs:
       channel:
@@ -105,6 +110,14 @@ on:
           - beta
           - stable
         description: Channel for manual runs (stable = no channel)
+      build-number:
+        type: string
+        default: auto
+        description: Build number ("auto", "timestamp", or an integer)
+      marketing-version:
+        type: string
+        default: ""
+        description: Override marketing version (e.g. 1.2.3)
 
 concurrency:
   group: amore-release
@@ -112,7 +125,7 @@ concurrency:
 
 jobs:
   release:
-    runs-on: macos-15          # pick the runner your project supports
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
 
@@ -139,7 +152,7 @@ jobs:
 
       - uses: AmoreComputer/release-action@v1
         with:
-          xcode-path: /Applications/Xcode_16.app
+          # xcode-path: /Applications/Xcode_16.app   # pin to avoid runner drift
           scheme: YourScheme
           codesign-identity: ${{ secrets.CODESIGN_IDENTITY }}
           dev-id-cert-p12: ${{ secrets.DEV_ID_CERT_P12 }}

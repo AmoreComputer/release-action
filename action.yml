@@ -111,6 +111,10 @@ inputs:
     description: Scoped Amore API token.
     required: false
     default: ""
+  amore-cask:
+    description: Homebrew cask that provides the amore CLI.
+    required: false
+    default: amore
 
   xcode-path:
     required: false
@@ -142,8 +146,10 @@ runs:
 
     - name: Install amore
       shell: bash
+      env:
+        IN_AMORE_CASK: ${{ inputs.amore-cask }}
       run: |
-        brew install --cask AmoreComputer/tap/amore
+        brew install --cask "$IN_AMORE_CASK"
         command -v amore
 
     # The scheme is part of the key: caches are never re-saved on an exact-key hit,

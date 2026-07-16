@@ -45,6 +45,10 @@ inputs:
     description: Ship a ZIP instead of a DMG (skips code signing and notarization).
     required: false
     default: "false"
+  cache:
+    description: Cache Swift package checkouts between runs.
+    required: false
+    default: "true"
 
   codesign-identity:
     required: false
@@ -142,6 +146,20 @@ runs:
         brew install --cask AmoreComputer/tap/amore
         command -v amore
 
+    # The scheme is part of the key: caches are never re-saved on an exact-key hit,
+    # so in a multi-app repo the first scheme to save would otherwise freeze the
+    # content and every other scheme would re-clone its missing packages each run.
+    # The bare restore-key lets a new scheme seed from a sibling scheme's cache.
+    - name: Cache Swift packages
+      if: inputs.cache == 'true'
+      uses: actions/cache@v4
+      with:
+        path: .amore/SourcePackages
+        key: ${{ runner.os }}-amore-spm-${{ inputs.scheme }}-${{ hashFiles('**/Package.resolved', '**/Package.swift') }}
+        restore-keys: |
+          ${{ runner.os }}-amore-spm-${{ inputs.scheme }}-
+          ${{ runner.os }}-amore-spm-
+
     # Self-hosted runners keep keychains between jobs, and a cancelled run skips
     # import-codesign-certs' post-job cleanup. A leftover signing_temp.keychain
     # makes its create-keychain fail, so remove any stale keychain first.
@@ -187,6 +205,7 @@ runs:
         AMORE_S3_PATH_PREFIX: ${{ inputs.s3-path-prefix }}
         AMORE_S3_APPCAST_PATH: ${{ inputs.s3-appcast-path }}
         AMORE_TOKEN: ${{ inputs.amore-token }}
+        AMORE_CLONED_SOURCE_PACKAGES_DIR: ${{ inputs.cache == 'true' && format('{0}/.amore/SourcePackages', github.workspace) || '' }}
       run: |
         set -euo pipefail
         args=(release)

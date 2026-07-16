@@ -194,6 +194,8 @@ Self-hosting on S3 / R2 / MinIO instead of Amore hosting? Also set `AWS_ACCESS_K
 
 `provisioning-profile` (base64 of a `.provisionprofile`) is only needed if your app's entitlements require one, e.g. Associated Domains.
 
+`cache` (default `true`) caches Swift package checkouts between runs, keyed per scheme and dependency set, so warm builds skip cloning the package graph. Set it to `false` to always resolve fresh.
+
 ## Outputs
 
 `version`, `build-number`, `bundle-id`, `download-url`, `latest-url`.

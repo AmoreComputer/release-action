@@ -142,6 +142,14 @@ runs:
         brew install --cask AmoreComputer/tap/amore
         command -v amore
 
+    # Self-hosted runners keep keychains between jobs, and a cancelled run skips
+    # import-codesign-certs' post-job cleanup. A leftover signing_temp.keychain
+    # makes its create-keychain fail, so remove any stale keychain first.
+    - name: Remove stale signing keychain
+      if: inputs.dev-id-cert-p12 != ''
+      shell: bash
+      run: security delete-keychain signing_temp.keychain 2>/dev/null || true
+
     - name: Import signing certificate
       if: inputs.dev-id-cert-p12 != ''
       uses: apple-actions/import-codesign-certs@63fff01cd422d4b7b855d40ca1e9d34d2de9427d # v3

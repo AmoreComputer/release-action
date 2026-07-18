@@ -49,6 +49,10 @@ inputs:
     description: Cache Swift package checkouts between runs.
     required: false
     default: "true"
+  bundle-id:
+    description: The app's bundle identifier, e.g. com.example.app. When set, amore skips the xcodebuild workspace query that otherwise resolves it before archiving (~20s on CI runners).
+    required: false
+    default: ""
 
   codesign-identity:
     required: false
@@ -197,6 +201,7 @@ runs:
         IN_NO_DMG: ${{ inputs.no-dmg }}
         IN_BUILD_NUMBER: ${{ inputs.build-number }}
         IN_MARKETING_VERSION: ${{ inputs.marketing-version }}
+        IN_BUNDLE_ID: ${{ inputs.bundle-id }}
         SPARKLE_PRIVATE_KEY: ${{ inputs.sparkle-private-key }}
         ASC_API_KEY_ID: ${{ inputs.asc-api-key-id }}
         ASC_API_ISSUER: ${{ inputs.asc-api-issuer }}
@@ -221,6 +226,7 @@ runs:
         [ -n "$IN_RELEASE_NOTES" ] && args+=(--release-notes "$IN_RELEASE_NOTES")
         [ -n "$IN_BUILD_NUMBER" ] && args+=(--build-number "$IN_BUILD_NUMBER")
         [ -n "$IN_MARKETING_VERSION" ] && args+=(--marketing-version "$IN_MARKETING_VERSION")
+        [ -n "$IN_BUNDLE_ID" ] && args+=(--bundle-id "$IN_BUNDLE_ID")
         [ "$IN_CHANNEL" = "stable" ] && IN_CHANNEL=""
         [ -n "$IN_CHANNEL" ] && args+=(--channel "$IN_CHANNEL")
         [ "$IN_CRITICAL" = "true" ] && args+=(--critical)

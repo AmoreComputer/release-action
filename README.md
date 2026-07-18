@@ -196,6 +196,8 @@ Self-hosting on S3 / R2 / MinIO instead of Amore hosting? Also set `AWS_ACCESS_K
 
 `cache` (default `true`) caches Swift package checkouts between runs, keyed per scheme and dependency set, so warm builds skip cloning the package graph. Set it to `false` to always resolve fresh.
 
+`bundle-id` is optional: when set, amore skips the `xcodebuild` workspace query that otherwise resolves the bundle identifier before archiving, saving ~20 seconds per run.
+
 ## Outputs
 
 `version`, `build-number`, `bundle-id`, `download-url`, `latest-url`.

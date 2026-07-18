@@ -141,7 +141,7 @@ jobs:
           set -euo pipefail
           channel=""
           if [ "$EVENT" = "workflow_dispatch" ]; then
-            if [ "$INPUT_CHANNEL" != "stable" ]; then channel="$INPUT_CHANNEL"; fi
+            channel="$INPUT_CHANNEL"   # the action maps "stable" to the stable channel
           elif [ "$REF_TYPE" = "branch" ]; then
             channel="alpha"
           elif [ "$REF_TYPE" = "tag" ]; then
@@ -188,7 +188,7 @@ Self-hosting on S3 / R2 / MinIO instead of Amore hosting? Also set `AWS_ACCESS_K
 
 ## Inputs
 
-`scheme` is the Xcode scheme to build. `channel` picks the release channel (e.g. `alpha`, `beta`); empty ships stable. Everything else has a sensible default; see [`action.yml`](action.yml) for the full list, including `path`, `release-notes`, `critical`, `draft`, `phased-rollout`, `watermark`, `no-dmg`, `provisioning-profile`, and the `s3-*` hosting inputs.
+`scheme` is the Xcode scheme to build. `channel` picks the release channel (e.g. `alpha`, `beta`); empty or `stable` ships stable, so a `workflow_dispatch` choice input can pass straight through. Everything else has a sensible default; see [`action.yml`](action.yml) for the full list, including `path`, `release-notes`, `critical`, `draft`, `phased-rollout`, `watermark`, `no-dmg`, `provisioning-profile`, and the `s3-*` hosting inputs.
 
 `build-number` defaults to `auto`: one past the highest build number the destination already has published. Use `timestamp` if you'd rather not depend on the destination being reachable, or pass an explicit integer.
 

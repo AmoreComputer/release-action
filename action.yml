@@ -18,7 +18,7 @@ inputs:
     required: false
     default: ""
   channel:
-    description: Publish to a named channel (e.g. alpha, beta). Empty publishes to the stable channel.
+    description: Publish to a named channel (e.g. alpha, beta). Empty or "stable" publishes to the stable channel.
     required: false
     default: ""
   critical:
@@ -221,6 +221,7 @@ runs:
         [ -n "$IN_RELEASE_NOTES" ] && args+=(--release-notes "$IN_RELEASE_NOTES")
         [ -n "$IN_BUILD_NUMBER" ] && args+=(--build-number "$IN_BUILD_NUMBER")
         [ -n "$IN_MARKETING_VERSION" ] && args+=(--marketing-version "$IN_MARKETING_VERSION")
+        [ "$IN_CHANNEL" = "stable" ] && IN_CHANNEL=""
         [ -n "$IN_CHANNEL" ] && args+=(--channel "$IN_CHANNEL")
         [ "$IN_CRITICAL" = "true" ] && args+=(--critical)
         [ "$IN_DRAFT" = "true" ] && args+=(--draft)

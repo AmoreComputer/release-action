@@ -194,7 +194,28 @@ Self-hosting on S3 / R2 / MinIO instead of Amore hosting? Also set `AWS_ACCESS_K
 
 `provisioning-profile` (base64 of a `.provisionprofile`) is only needed if your app's entitlements require one, e.g. Associated Domains.
 
-`cache` (default `true`) caches Swift package checkouts between runs, keyed per scheme and dependency set, so warm builds skip cloning the package graph. Set it to `false` to always resolve fresh.
+`cache` (default `true`) caches Swift package checkouts between runs via GitHub's cache service, keyed per scheme and dependency set, so warm builds skip cloning the package graph. Set it to `false` to always resolve fresh.
+
+Set `cache: external` to bring your own cache action instead — useful on runner providers with their own, faster cache service (WarpBuild, BuildJet, Blacksmith, ...). The action still pins package checkouts to `.amore/SourcePackages`; the workflow caches that directory itself:
+
+```yaml
+      - uses: WarpBuilds/cache@v1     # or actions/cache, BuildJet/cache-action, ...
+        with:
+          path: .amore/SourcePackages
+          # The scheme is part of the key: caches never re-save on an exact-key
+          # hit, so in a multi-app repo one shared key would freeze the first
+          # scheme's content. The bare restore-key seeds new schemes.
+          key: ${{ runner.os }}-amore-spm-YourScheme-${{ hashFiles('**/Package.resolved', '**/Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-amore-spm-YourScheme-
+            ${{ runner.os }}-amore-spm-
+
+      - uses: AmoreComputer/release-action@v1
+        with:
+          scheme: YourScheme
+          cache: external
+          # ...
+```
 
 `bundle-id` is optional: when set, amore skips the `xcodebuild` workspace query that otherwise resolves the bundle identifier before archiving, saving ~20 seconds per run.
 

@@ -46,7 +46,7 @@ inputs:
     required: false
     default: "false"
   cache:
-    description: Cache Swift package checkouts between runs.
+    description: '"true" caches Swift package checkouts in .amore/SourcePackages between runs via actions/cache. "external" still pins the checkouts to that directory but leaves caching it to the workflow, for provider-specific cache actions. "false" disables both.'
     required: false
     default: "true"
   bundle-id:
@@ -216,7 +216,7 @@ runs:
         AMORE_S3_PATH_PREFIX: ${{ inputs.s3-path-prefix }}
         AMORE_S3_APPCAST_PATH: ${{ inputs.s3-appcast-path }}
         AMORE_TOKEN: ${{ inputs.amore-token }}
-        AMORE_CLONED_SOURCE_PACKAGES_DIR: ${{ inputs.cache == 'true' && format('{0}/.amore/SourcePackages', github.workspace) || '' }}
+        AMORE_CLONED_SOURCE_PACKAGES_DIR: ${{ (inputs.cache == 'true' || inputs.cache == 'external') && format('{0}/.amore/SourcePackages', github.workspace) || '' }}
       run: |
         set -euo pipefail
         args=(release)

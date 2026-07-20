@@ -62,6 +62,9 @@ jobs:
           channel: ${{ inputs.channel }}
           build-number: ${{ inputs.build-number || 'auto' }}
           marketing-version: ${{ inputs.marketing-version }}
+          # Optional: publish a versioned download filename instead of the
+          # product-derived default (for example, YourApp.dmg).
+          # artifact-name: YourApp-${{ inputs.marketing-version }}.dmg
           # Leave false to use your account default: Amore+ ships a clean DMG,
           # free accounts always ship the "Built with amore.computer" watermark.
           # Set true only if you want to keep the watermark.
@@ -189,6 +192,8 @@ Self-hosting on S3 / R2 / MinIO instead of Amore hosting? Also set `AWS_ACCESS_K
 ## Inputs
 
 `scheme` is the Xcode scheme to build. `channel` picks the release channel (e.g. `alpha`, `beta`); empty or `stable` ships stable, so a `workflow_dispatch` choice input can pass straight through. Everything else has a sensible default; see [`action.yml`](action.yml) for the full list, including `path`, `release-notes`, `critical`, `draft`, `phased-rollout`, `watermark`, `no-dmg`, `provisioning-profile`, and the `s3-*` hosting inputs.
+
+`artifact-name` optionally controls the published download filename. Include the extension (`.dmg`, or `.zip` with `no-dmg: true`) and do not include a directory. The action first produces the signed and notarized artifact locally, renames it, then publishes that existing artifact. When omitted, the action keeps the normal one-pass release flow.
 
 `build-number` defaults to `auto`: one past the highest build number the destination already has published. Use `timestamp` if you'd rather not depend on the destination being reachable, or pass an explicit integer.
 
